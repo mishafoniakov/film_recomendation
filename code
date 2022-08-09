@@ -1,0 +1,124 @@
+class FilmRecomendation:
+    def __init__(self, movies, similarities, friends):
+        self.movies, self.friends = movies, friends
+        self.n, self.m, self.o = len(movies), len(similarities), len(friends)
+    
+    def similarities_for_pair(self, similarities):
+        i, j = 0, 0
+        while i < self.m:
+            if j == self.m:
+                j = 1
+                i += 1
+            elif j <= i:
+                j += 1
+            elif len(set(similarities[i]).intersection(set(similarities[j]))) > 0:
+                similarities.append(list(set(similarities[j]).symmetric_difference(set(similarities[i]))))
+                j += 1
+            else:
+                j += 1
+        return similarities
+    
+    def similartities_for_movie(self, similarities):
+        i, j, l = 0, 0, 0
+        m = len(similarities)
+        movies_similarity = [[] for i in range(self.n)]
+        while i < self.n:
+            if j == m:
+                j = 0
+                i += 1
+            else:
+                p = len(similarities[j])
+                if self.movies[i] in similarities[j]:
+                    if l == p:
+                        l = 0
+                        j += 1
+                    elif self.movies[i] != similarities[j][l]:
+                        movies_similarity[i].append(similarities[j][l])
+                        l += 1
+                    else:
+                        l += 1
+                else:
+                    j += 1
+        return movies_similarity
+
+    def discussability(self, similarity):
+        F = [0] * self.n
+        i, j, k, l = 0, 0, 0, 0
+        while i < self.n:
+            if k == self.o:
+                k = 0
+                i += 1
+            elif self.movies[i] in self.friends[k]:
+                F[i] += 1
+                k += 1
+            else:
+                k += 1
+        return F
+    
+    def uniqueness(self, similarities, friends):
+        i, j = 0, 0
+        friends_similar = [[0 for y in range(len(similarities[x]))] for x in range(self.n)]
+        S = [0] * self.n
+        while i < self.n:
+            p = len(similarities[i])
+            if j == p:
+                j = 0
+                S[i] = sum(friends_similar[i]) / len(friends_similar[i])
+                i += 1
+            else:
+                friends_similar[i][j] = friends[self.movies.index(similarities[i][j])]
+                j += 1
+        return S
+    
+    def movie_score(self, f_func, s_func):
+        i = 0
+        score = [0] * self.n
+        while i < self.n:
+            if f_func[i] == 0 or s_func[i] == 0:
+                score[i] == 0
+            else:
+                score[i] = f_func[i] / s_func[i]
+            i += 1
+        return score
+    
+    def film_recomendation(self, array):
+        i, max = 0, 0
+        while i < self.n:
+            if array[i] > max:
+                max = array[i]
+                max_film = self.movies[i]
+            i += 1
+        return max_film
+
+#Еxample
+
+#the list of movies
+movies = ['Parasite', '1917', 'Ford v Ferrari', 'Joho Rabbit', 'Joker']
+
+#the list of similarities of movies
+similarities = [['Parasite', '1917'], ['Parasite', 'Joho Rabbit'], ['Joker', 'Ford v Ferrari']]
+
+#What of the folowing movies was seen by some people (friends)
+friends = [['Joker'], ['Joker', '1917'], ['Joker'], ['Parasite'], ['1917'], ['Joho Rabbit', 'Joker']]
+
+#Let's defermine the film recomendation according the example
+film = FilmRecomendation(movies, similarities, friends)
+
+#firstly, it is necessary to determine all pairs of similarity according
+#to unions and intersections
+pair_similarities = film.similarities_for_pair(similarities)
+
+#secondly, let's determine similarities for each movie
+movie_similarities = film.similartities_for_movie(pair_similarities)
+
+#thirdly, we need to determine how many people (friends) have seen each movie
+friend_movies = film.discussability(movie_similarities)
+
+#fourthly, we count uniqueness for each film
+mean_value = film.uniqueness(movie_similarities, friend_movies)
+
+#fifthly, we count movie score
+score = film.movie_score(friend_movies, mean_value)
+
+#finally, we find film with the highest score. This is the recomendation
+film_recomendation = film.film_recomendation(score)
